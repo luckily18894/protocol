@@ -25,6 +25,7 @@ def snmpv2_get(ip, community, oid, port=161):
 
     for varBind in varBinds:
         result = result + varBind.prettyPrint()  # 返回结果
+    # print(result)
     # 返回的为一个元组,OID与字符串结果
     return result.split("=")[0].strip(), result.split("=")[1].strip()
 
@@ -35,15 +36,21 @@ def get_info_writedb(ip, rocommunity, dbname, seconds):
 
     conn = sqlite3.connect(dbname)
     cursor = conn.cursor()
-    cursor.execute("create table cpudb(id INTEGER PRIMARY KEY AUTOINCREMENT, time varchar(64), cpu int)")
+    cursor.execute("create table memorydb(time varchar(64), memory int)")
 
     while seconds > 0:
-        # 获取cpmCPUTotal5sec
-        cpu_info = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.4.1.2.0.0.0', port=161)[1]
+        # 获取内存总量
+        memory_all = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.2.0.0.0', port=161)[1]
+        # 获取内存空闲量
+        memory_free = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.3.0.0.0', port=161)[1]
+        # 计算出内存使用率,保留两位小数
+        memory_used = int(memory_all) - int(memory_free)
+
+        memory_usage = '{:.4f}'.format(memory_used / int(memory_all))
         # 记录当前时间
         time_info = datetime.datetime.now()
         # 把数据写入数据库
-        cursor.execute("insert into cpudb (time, cpu) values ('%s', %d)" % (time_info, int(cpu_info)))
+        cursor.execute("insert into memorydb (time, memory) values ('%s', %s)" % (time_info, memory_usage))
         # 每五秒采集一次数据
         time.sleep(5)
         seconds -= 5
@@ -51,6 +58,6 @@ def get_info_writedb(ip, rocommunity, dbname, seconds):
 
 
 if __name__ == '__main__':
-    get_info_writedb('192.168.1.106', '123321', 'cpu_usage.sqlite', 60)
-
+    get_info_writedb('192.168.168.3', '123321', 'memory_usage.sqlite', 90)
+    # snmpv2_get('192.168.168.3', '123321', '1.3.6.1.4.1.2011.6.3.5.1.1.3.0.0.0')
 
