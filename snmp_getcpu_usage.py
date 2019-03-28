@@ -21,7 +21,7 @@ def snmpv2_get(ip, community, oid, port=161):
     elif errorStatus:
         print('%s at %s' % (errorStatus, errorindex and varBinds[int(errorindex) - 1][0] or '?'))
     # 如果返回结果有多行,需要拼接后返回
-    result = ""
+    result = ''
 
     for varBind in varBinds:
         result = result + varBind.prettyPrint()  # 返回结果
@@ -35,19 +35,15 @@ def get_info_writedb(ip, rocommunity, dbname, seconds):
 
     conn = sqlite3.connect(dbname)
     cursor = conn.cursor()
-    cursor.execute("create table routerdb(id INTEGER PRIMARY KEY AUTOINCREMENT, time varchar(64), cpu int")
+    cursor.execute("create table cpudb(id INTEGER PRIMARY KEY AUTOINCREMENT, time varchar(64), cpu int)")
 
     while seconds > 0:
-        # cpmCPUTotal5sec
-        cpu_info = snmpv2_get(ip, rocommunity, "1.3.6.1.4.1.2011.6.3.4.1.2.0.0.0", port=161)[1]
-        # cpmCPUMemoryUsed
-        # memu_info = snmpv2_get(ip, rocommunity, "1.3.6.1.4.1.9.9.109.1.1.1.1.12.7", port=161)[1]
-        # # cpmCPUMemoryFree
-        # memf_info = snmpv2_get(ip, rocommunity, "1.3.6.1.4.1.9.9.109.1.1.1.1.13.7", port=161)[1]
+        # 获取cpmCPUTotal5sec
+        cpu_info = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.4.1.2.0.0.0', port=161)[1]
         # 记录当前时间
         time_info = datetime.datetime.now()
         # 把数据写入数据库
-        cursor.execute("insert into routerdb (time, cpu, memu, memf) values ('%s', %d)" % (time_info, int(cpu_info)))
+        cursor.execute("insert into cpudb (time, cpu) values ('%s', %d)" % (time_info, int(cpu_info)))
         # 每五秒采集一次数据
         time.sleep(5)
         seconds -= 5
@@ -55,6 +51,6 @@ def get_info_writedb(ip, rocommunity, dbname, seconds):
 
 
 if __name__ == '__main__':
-    get_info_writedb("10.1.1.253", "tcpipro", "cpu_usage.sqlite", 60)
+    get_info_writedb('192.168.1.106', '123321', 'cpu_usage.sqlite', 60)
 
 
