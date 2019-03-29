@@ -8,7 +8,7 @@ def get_ip_address(ifname):
     if platform.system() == "Linux":
         return ifaddresses(ifname)[AF_INET][0]['addr']
     elif platform.system() == "Windows":
-        from win_interface_name import win_from_name_get_id
+        from ARP.win_interface_name import win_from_name_get_id
         if_id = win_from_name_get_id(ifname)
         return ifaddresses(if_id)[AF_INET][0]['addr']
     else:
@@ -19,7 +19,7 @@ def get_ipv6_address(ifname):
     if platform.system() == "Linux":
         return ifaddresses(ifname)[AF_INET6][0]['addr']
     elif platform.system() == "Windows":
-        from win_interface_name import win_from_name_get_id
+        from ARP.win_interface_name import win_from_name_get_id
         if_id = win_from_name_get_id(ifname)
         return ifaddresses(if_id)[AF_INET6][0]['addr']
     else:
