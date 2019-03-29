@@ -9,19 +9,20 @@ from pysnmp.proto import api
 
 def analysis(info):
     # 分析Trap信息字典函数
-    # 下面是这个大字典的键值与嵌套的小字典
-    # 1.3.6.1.2.1.1.3.0 {'value': 'ObjectSyntax', 'application-wide': 'ApplicationSyntax', 'timeticks-value': '103170310'}
-    # 1.3.6.1.6.3.1.1.4.1.0 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'objectID-value': '1.3.6.1.6.3.1.1.5.4'}
-    # 1.3.6.1.2.1.2.2.1.1.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '2'}
-    # 1.3.6.1.2.1.2.2.1.2.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'string-value': 'GigabitEthernet2'}
-    # 1.3.6.1.2.1.2.2.1.3.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '6'}
+# 下面是这个大字典的键值与嵌套的小字典
+# {'1.3.6.1.2.1.1.3.0': {'value': 'ObjectSyntax', 'application-wide': 'ApplicationSyntax', 'timeticks-value': '1779998'},
+#  '1.3.6.1.6.3.1.1.4.1.0': {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'objectID-value': '1.3.6.1.2.1.14.16.2.16'},
+#  '1.3.6.1.2.1.14.1.1.0': {'value': 'ObjectSyntax', 'application-wide': 'ApplicationSyntax', 'ipAddress-value': '10.0.5.5'},
+#  '1.3.6.1.2.1.14.7.1.1.10.0.75.5.0': {'value': 'ObjectSyntax', 'application-wide': 'ApplicationSyntax', 'ipAddress-value': '10.0.75.5'},
+# '1.3.6.1.2.1.14.7.1.2.10.0.75.5.0': {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '0'},
+#  '1.3.6.1.2.1.14.7.1.12.10.0.75.5.0': {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '1'}}
 
-    if '1.3.6.1.6.3.1.1.4.1.0' in info.keys():
-        if info['1.3.6.1.6.3.1.1.4.1.0']['objectID-value'] == '1.3.6.1.6.3.1.1.5.4':
-            print(info['1.3.6.1.2.1.2.2.1.2.2']['string-value'], 'UP')
-        elif info['1.3.6.1.6.3.1.1.4.1.0']['objectID-value'] == '1.3.6.1.6.3.1.1.5.3':
-            print(info['1.3.6.1.2.1.2.2.1.2.2']['string-value'], 'Down')
-    print(info)  # 打印字典信息
+    if '1.3.6.1.2.1.14.7.1.1.10.0.75.5.0' in info.keys():
+        if info['1.3.6.1.2.1.14.7.1.12.10.0.75.5.0']['integer-value'] == '5':
+            return 'OSPF Neighbor  ' + info['1.3.6.1.2.1.14.1.1.0']['ipAddress-value'] + '  UP'
+        elif info['1.3.6.1.2.1.14.7.1.12.10.0.75.5.0']['integer-value'] == '1':
+            return 'OSPF Neighbor  ' + info['1.3.6.1.2.1.14.1.1.0']['ipAddress-value'] + '  Down'
+    # print(info)  # 打印字典信息
 
 
 def cbfun(transportDispatcher, transportDomain, transportAddress, wholeMsg):  # 处理Trap信息的函数
@@ -33,7 +34,8 @@ def cbfun(transportDispatcher, transportDomain, transportAddress, wholeMsg):  # 
             print('Unsupported SNMP version %s' % msgVer)
             return
         reqMsg, wholeMsg = decoder.decode(wholeMsg, asn1Spec=pMod.Message(),)  # 对信息进行解码
-        print('Notification message from %s:%s: ' % (transportDomain, transportAddress))  # 打印发送TRAP的源信息
+        # print('Notification message from %s:%s: ' % (transportDomain, transportAddress))  # 打印发送TRAP的源信息
+
         reqPDU = pMod.apiMessage.getPDU(reqMsg)
         if reqPDU.isSameTypeWith(pMod.TrapPDU()):
             if msgVer == api.protoVersion1:  # SNMPv1的特殊处理方法,可以提取更加详细的信息
@@ -47,12 +49,7 @@ def cbfun(transportDispatcher, transportDomain, transportAddress, wholeMsg):  # 
                 varBinds = pMod.apiPDU.getVarBindList(reqPDU)
 
             result_dict = {}  # 每一个Trap信息,都会整理返回一个字典
-            # 下面是这个大字典的键值与嵌套的小字典
-            # 1.3.6.1.2.1.1.3.0 {'value': 'ObjectSyntax', 'application-wide': 'ApplicationSyntax', 'timeticks-value': '103170310'}
-            # 1.3.6.1.6.3.1.1.4.1.0 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'objectID-value': '1.3.6.1.6.3.1.1.5.4'}
-            # 1.3.6.1.2.1.2.2.1.1.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '2'}
-            # 1.3.6.1.2.1.2.2.1.2.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'string-value': 'GigabitEthernet2'}
-            # 1.3.6.1.2.1.2.2.1.3.2 {'value': 'ObjectSyntax', 'simple': 'SimpleSyntax', 'integer-value': '6'}
+
             for x in varBinds:  # 打印详细Trap信息
                 result = {}
                 for x, y in x.items():
@@ -69,7 +66,9 @@ def cbfun(transportDispatcher, transportDomain, transportAddress, wholeMsg):  # 
                                 result[v.split('=')[0]] = v.split('=')[1]
                 result_dict[id] = result
 
-            analysis(result_dict)  # 把字典传到分析模块进行分析
+            if analysis(result_dict):  # 把字典传到分析模块进行分析
+                print('Notification message from %s:%s: ' % (transportDomain, transportAddress))  # 打印发送TRAP的源信息
+                print(analysis(result_dict))
 
     return wholeMsg
 
@@ -94,6 +93,7 @@ def snmp_trap_receiver(ifname, port=162):
 
 
 if __name__ == "__main__":
-    snmp_trap_receiver('VMware Network Adapter VMnet1')
+    # snmp_trap_receiver('VMware Network Adapter VMnet1')
+    snmp_trap_receiver('ens33')
 
 
