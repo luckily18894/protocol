@@ -1,9 +1,7 @@
 # -*- coding=utf-8 -*-
 
 import sqlite3
-from dateutil import parser
 from matplotlib import pyplot as plt
-from syslog_server_to_db import severity_level_dict
 
 logsourse = {0: '01OSPF', 1: 'Link', 2: 'sys'}
 
