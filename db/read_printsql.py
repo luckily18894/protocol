@@ -1,7 +1,8 @@
 # -*- coding=utf-8 -*-
 
 import pg8000
-from datetime import datetime
+import datetime
+# from datetime import datetime
 from dateutil import parser
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdate
@@ -10,24 +11,26 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['font.family'] = 'sans-serif'
 
 
-def read_print_list(start_time, endtime):
+def read_print_list(starttime):
     # 连接数据库并读取
-    conn = pg8000.connect(host='192.168.1.10', user='luckily18894', password='luCKi1y18894', database='pythondb')
+    conn = pg8000.connect(host='192.168.1.110', user='luckily18894', password='luCKi1y18894', database='pythondb')
     cursor = conn.cursor()
-    cursor.execute("select * from memorydb WHERE record_time >='{0}' AND record_time < '{1}'".format(start_time, endtime))
+    cursor.execute("select * from memorydb WHERE record_time >='{0}' ".format(starttime))
     yourresults = cursor.fetchall()
 
     return yourresults
 
 
-def mem_draw(start_time, endtime):
+def mem_draw(starttime):
     # 将数据库中的数据取出，分成 时间、使用率 2个列表
-    time_list = []
-    mem_list = []
-    for a in read_print_list(start_time, endtime):
+    time_list, mem_list = [], []
+    for a in read_print_list(starttime):
         time_list.append(a[3])
         mem_list.append(float(a[2]))
+        print(a)
     print(time_list)
+    print(mem_list)
+
     # 调节图形大小，宽，高
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(111)  # 一共一行, 每行一图, 第一图
@@ -49,9 +52,11 @@ def mem_draw(start_time, endtime):
 
 
 if __name__ == '__main__':
-    start = datetime(2019, 3, 31, 22, 00, 0, 000000)
-    end = datetime(2019, 3, 31, 22, 20, 0, 000000)
+    # start = datetime.datetime(2019, 4, 1, 10, 15, 0, 000000)
+    # end = datetime.datetime(2019, 4, 1, 10, 23, 0, 000000)
 
-    mem_draw(start, end)
+    # 最近一分钟
+    starttime = datetime.datetime.now() - datetime.timedelta(minutes=1)
+    mem_draw(starttime)
     # print(read_print_list(start, end))
 

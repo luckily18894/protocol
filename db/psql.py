@@ -29,32 +29,35 @@ def snmpv2_get(ip, community, oid, port=161):
     return result.split("=")[0].strip(), result.split("=")[1].strip()
 
 
-def get_info_writedb(ip, rocommunity, seconds):
+def get_info_writedb(ip, rocommunity):
     # 连接psql数据库并创建表项
-    conn = pg8000.connect(host='192.168.1.10', user='luckily18894', password='luCKi1y18894', database='pythondb')
+    conn = pg8000.connect(host='192.168.1.110', user='luckily18894', password='luCKi1y18894', database='pythondb')
     cursor = conn.cursor()
     cursor.execute("drop table memorydb")
     cursor.execute("create table memorydb(id SERIAL PRIMARY KEY, ip varchar(9999), memoryusage varchar(9999), record_time timestamp default current_timestamp)")
 
-    while seconds > 0:
-        # 获取内存总量
-        memory_all = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.2.0.0.0', port=161)[1]
-        # 获取内存空闲量
-        memory_free = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.3.0.0.0', port=161)[1]
-        # 计算出内存使用率,保留两位小数
-        memory_used = int(memory_all) - int(memory_free)
-        memory_usage = '{:.2f}'.format((memory_used / int(memory_all) * 100))
+    while True:
+        try:
+            # 获取内存总量
+            memory_all = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.2.0.0.0', port=161)[1]
+            # 获取内存空闲量
+            memory_free = snmpv2_get(ip, rocommunity, '1.3.6.1.4.1.2011.6.3.5.1.1.3.0.0.0', port=161)[1]
+            # 计算出内存使用率,保留两位小数
+            memory_used = int(memory_all) - int(memory_free)
+            memory_usage = '{:.2f}'.format((memory_used / int(memory_all) * 100))
 
-        # 把数据写入数据库
-        cursor.execute("insert into memorydb (ip, memoryusage) values ('%s', '%s')" % (ip, memory_usage))
-        # 每五秒采集一次数据
-        time.sleep(5)
-        seconds -= 5
-    conn.commit()
+            # 把数据写入数据库
+            cursor.execute("insert into memorydb (ip, memoryusage) values ('%s', '%s')" % (ip, memory_usage))
+            # 每五秒采集一次数据
+            time.sleep(5)
+            # seconds -= 5
+            conn.commit()
+        except KeyboardInterrupt:
+            print('Stopped')
 
 
 if __name__ == '__main__':
-    get_info_writedb('192.168.1.7', '123321', 300)
+    get_info_writedb('192.168.1.107', '123321')
     # snmpv2_get('192.168.168.3', '123321', '1.3.6.1.4.1.2011.6.3.5.1.1.3.0.0.0')
 
 
