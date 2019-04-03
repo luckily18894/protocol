@@ -84,20 +84,20 @@ def write_config_md5_to_db(device_list, username, password, send_to):
 
     for device in device_list:
         config_and_md5 = get_config_md5(ip=device, username=username, password=password)
+        time_now = datetime.datetime.now()
 
-        # 查找数据库中 是否有此设备的配置记录
-        md5_results = ''
-        md5_results = db.secie.find_one({'ip': device})['md5']
-
-        # 如果没有此md5值 就写入这条目
-        if not md5_results:
+        # 查找数据库中 是否有此设备的配置记录 并作出相应操作
+        # 如果没有此设备信息 就写入该条目
+        if not db.secie.find_one({'ip': device}):
             record = {'ip': device,
                       'config': config_and_md5[0],
                       'md5': config_and_md5[1],
-                      'time': datetime.datetime.now()}
+                      'time': time_now}
             db.secie.insert_one(record)
         else:
-            # 如果md5值不同 发送邮件通知不同之处，并更新该条目
+            md5_results = db.secie.find_one({'ip': device})['md5']
+
+            # 如果md5值不同 发送邮件通知配置不同之处，并更新该条目
             if config_and_md5[1] != md5_results:
                 # 对比不同处
                 old = db.secie.find_one({'ip': device})['config']
@@ -110,13 +110,14 @@ def write_config_md5_to_db(device_list, username, password, send_to):
                                 '185686792@qq.com',
                                 send_to,
                                 '设备{0}配置改变'.format(device),
-                                '系统于{0}检测到配置变化\r\n配置比较如下\r\n{1}'.format(datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S'),
-                                                                               differences))
-
+                                '系统于{0}检测到配置变化\r\n配置比较如下：\r\n{1}'.format(time_now.strftime('%Y.%m.%d %H:%M:%S'),
+                                                                                     differences))
                 # 更新条目
-                db.secie.update({'ip': device}, {"$set": {'config': config_and_md5[0]}},
-                                                {"$set": {'md5': config_and_md5[1]}},
-                                                {"$set": {'time': datetime.datetime.now()}})
+                db.secie.update({'ip': device}, {"$set": {'config': config_and_md5[0]}})
+                db.secie.update({'ip': device}, {"$set": {'md5': config_and_md5[1]}})
+                db.secie.update({'ip': device}, {"$set": {'time': time_now}})
+                print('配置已经成功更新！')
+
             # 如果md5值相同 就掠过
             else:
                 pass
@@ -126,7 +127,7 @@ if __name__ == '__main__':
     device_list = ['192.168.1.107']
     # username = 'root'
     # password = 'huawei'
-    send_to = '2426848309@qq.com;185686792@qq.com'
+    send_to = '185686792@qq.com'
 
     # print(get_config_md5('192.168.1.107', 'root', 'huawei'))
     write_config_md5_to_db(device_list, 'root', 'huawei', send_to)
