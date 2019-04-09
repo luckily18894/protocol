@@ -1,10 +1,11 @@
 # -*- coding=utf-8 -*-
 
+import re
 import pyshark
 from pymongo import *
 
 # 连接数据库
-client = MongoClient('mongodb://luckily18894:luCKi1y18894@192.168.1.110:27017/pythondb')
+client = MongoClient('mongodb://luckily18894:luCKi1y18894@192.168.1.10:27017/pythondb')
 db = client['pythondb']
 db.secie.remove()
 
@@ -21,12 +22,12 @@ def read_pcap_to_db(file):
 
         # 将key中的 . 替换成 _    eth.addr ——> eth_addr
         for key, value in pkt_dict.items():
-            res[key.replace('.', '_')] = value
+            res[re.sub('\.', '_', key)] = value
 
         # 入库
-        db.pktinfo.insert_one(res)
+        # db.pktinfo.insert_one(res)
 
 
 if __name__ == '__main__':
-    read_pcap_to_db('test.pcap')
+    read_pcap_to_db('test1.pcap')
 
